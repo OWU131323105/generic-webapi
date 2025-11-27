@@ -109,9 +109,12 @@
                 }
 
                 const data = await response.json();
-                quizData = data.questions;
+                quizData = data.data;
+                console.log(data);
+
 
                 if (!Array.isArray(quizData) || quizData.length === 0) {
+                    console.log(quizData);
                     throw new Error('Invalid quiz data format');
                 }
 

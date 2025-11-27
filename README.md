@@ -106,7 +106,7 @@ Format: JSON array
 ```json
 {
   "title": "My Quiz",
-  "questions": [...]
+  "data": [...]
 }
 ```
 

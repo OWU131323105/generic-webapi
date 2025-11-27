@@ -10,8 +10,8 @@ app.use(express.json());
 app.use(express.static('public'));
 
 // 設定をコードで定義
-const PROVIDER = 'gemini';  // 'openai' or 'gemini'
-const MODEL = 'gemini-2.5-flash';  // OpenAI: 'gpt-4o-mini', Gemini: 'gemini-2.5-flash'
+const PROVIDER = 'openai';  // 'openai' or 'gemini'
+const MODEL = 'gpt-4o-mini';  // OpenAI: 'gpt-4o-mini', Gemini: 'gemini-2.5-flash'
 
 let promptTemplate;
 try {
@@ -48,7 +48,7 @@ app.post('/api/', async (req, res) => {
 
         res.json({ 
             title: title,
-            questions: result 
+            data: result 
         });
 
     } catch (error) {
@@ -89,9 +89,14 @@ async function callOpenAI(prompt) {
     
     try {
         const parsedData = JSON.parse(responseText);
-        return Array.isArray(parsedData) ? parsedData : parsedData.quiz || [];
+        // Find the first value in the object that is an array
+        const arrayData = Object.values(parsedData).find(Array.isArray);
+        if (!arrayData) {
+            throw new Error('No array found in the LLM response object.');
+        }
+        return arrayData;
     } catch (parseError) {
-        throw new Error('Failed to parse LLM response');
+        throw new Error('Failed to parse LLM response: ' + parseError.message);
     }
 }
 
@@ -111,7 +116,7 @@ async function callGemini(prompt) {
                 parts: [{ text: prompt }]
             }],
             generationConfig: {
-                maxOutputTokens: 2000,
+                maxOutputTokens: 3000,
                 response_mime_type: "application/json"
             }
         })
@@ -126,9 +131,15 @@ async function callGemini(prompt) {
     const responseText = data.candidates[0].content.parts[0].text;
     
     try {
-        return JSON.parse(responseText);
+        const parsedData = JSON.parse(responseText);
+        // Find the first value in the object that is an array
+        const arrayData = Object.values(parsedData).find(Array.isArray);
+        if (!arrayData) {
+            throw new Error('No array found in the LLM response object.');
+        }
+        return arrayData;
     } catch (parseError) {
-        throw new Error('Failed to parse LLM response');
+        throw new Error('Failed to parse LLM response: ' + parseError.message);
     }
 }
 
