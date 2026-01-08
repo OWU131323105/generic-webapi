@@ -1,15 +1,55 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const http = require('http'); // 追加: Socket.IOのために必要
+const { Server } = require("socket.io"); // 追加: Socket.IO
 require('dotenv').config();
 
 const app = express();
+const server = http.createServer(app); // 追加: appを使ってhttpサーバーを作成
+const io = new Server(server); // 追加: サーバーにSocket.IOを接続
+
 const PORT = process.env.PORT || 8080;
 
 app.use(express.json());
 app.use(express.static('public'));
 
-// 設定をコードで定義
+// ==========================================
+//  Socket.IO (リアルタイム通信) 設定エリア
+// ==========================================
+// server.js の io.on('connection', ...) の中身をこれに書き換えてください
+
+io.on('connection', (socket) => {
+    console.log('New client connected: ' + socket.id);
+
+    // ゲームルーム参加
+    socket.on('join', (room) => {
+        socket.join(room);
+        console.log(`Client joined room: ${room}`);
+    });
+
+    // センサーデータ受信 (IDを付与して転送)
+    socket.on('sensor', (data) => {
+        // 受け取ったデータに id: socket.id を追加してゲーム画面へ送る
+        socket.to('game').emit('sensor', { id: socket.id, ...data });
+    });
+
+    // スマッシュ受信 (IDを付与して転送)
+    socket.on('smash', (data) => {
+        socket.to('game').emit('smash', { id: socket.id, ...data });
+    });
+
+    // 切断時の処理
+    socket.on('disconnect', () => {
+        console.log('Client disconnected: ' + socket.id);
+        // ゲーム側に「誰が落ちたか」を通知
+        io.to('game').emit('player_left', { id: socket.id });
+    });
+});
+
+// ==========================================
+//  LLM API (AI生成) 設定エリア
+// ==========================================
 const PROVIDER = 'openai';  // 'openai' or 'gemini'
 const MODEL = 'gpt-4o-mini';  // OpenAI: 'gpt-4o-mini', Gemini: 'gemini-2.5-flash'
 
@@ -21,7 +61,8 @@ try {
     process.exit(1);
 }
 
-const OPENAI_API_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
+// プロキシのエンドポイント設定（元のコードを維持）
+const OPENAI_API_ENDPOINT = "https://openai-api-proxy-746164391621.us-west1.run.app";
 const GEMINI_API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/';
 
 app.post('/api/', async (req, res) => {
@@ -89,7 +130,6 @@ async function callOpenAI(prompt) {
     
     try {
         const parsedData = JSON.parse(responseText);
-        // Find the first value in the object that is an array
         const arrayData = Object.values(parsedData).find(Array.isArray);
         if (!arrayData) {
             throw new Error('No array found in the LLM response object.');
@@ -132,7 +172,6 @@ async function callGemini(prompt) {
     
     try {
         const parsedData = JSON.parse(responseText);
-        // Find the first value in the object that is an array
         const arrayData = Object.values(parsedData).find(Array.isArray);
         if (!arrayData) {
             throw new Error('No array found in the LLM response object.');
@@ -143,7 +182,8 @@ async function callGemini(prompt) {
     }
 }
 
-app.listen(PORT, () => {
+// 最後に server.listen を呼ぶ (app.listen ではない)
+server.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
     console.log(`Config: ${PROVIDER} - ${MODEL}`);
 });
