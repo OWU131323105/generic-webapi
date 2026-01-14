@@ -1,534 +1,744 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>🐈 AI早押しクイズ大会 (最大5人) 🐈</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>🐈 AI早押しクイズ大会 (最大5人) 🐈</title>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.8.0/p5.js"></script>
-  <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.8.0/p5.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
 
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      font-family: sans-serif;
-      background-color: #f0f0f0;
-    }
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: sans-serif;
+            background-color: #f0f0f0;
+        }
 
-    h1 { color: #333; margin: 10px 0; font-size: 1.5rem; }
+        h1 {
+            color: #333;
+            margin: 10px 0;
+            font-size: 1.5rem;
+        }
 
-    #game-container {
-      position: relative;
-    }
+        #game-container {
+            position: relative;
+        }
 
-    canvas {
-      border: 5px solid #6c3b1c;
-      background-color: #fff6f0; 
-      border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-      display: block;
-    }
+        canvas {
+            border: 5px solid #6c3b1c;
+            background-color: #fff6f0;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: block;
+        }
 
-    /* スコア表示エリア */
-    #score-container {
-      width: 800px;
-      display: flex;
-      justify-content: flex-start;
-      gap: 10px;
-      margin-top: 10px;
-      padding: 0 10px;
-      box-sizing: border-box;
-      flex-wrap: wrap;
-    }
+        /* スコア表示エリア */
+        #score-container {
+            width: 800px;
+            display: flex;
+            justify-content: flex-start;
+            gap: 10px;
+            margin-top: 10px;
+            padding: 0 10px;
+            box-sizing: border-box;
+            flex-wrap: wrap;
+        }
 
-    .player-score {
-      background: white;
-      padding: 5px 15px;
-      border-radius: 15px;
-      font-weight: bold;
-      font-size: 1.2rem;
-      border: 3px solid #ccc;
-      min-width: 100px;
-      text-align: center;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
+        .player-score {
+            background: white;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            border: 3px solid #ccc;
+            min-width: 100px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
 
-    #status-display {
-      margin-top: 5px;
-      color: #555;
-      font-weight: bold;
-    }
+        #status-display {
+            margin-top: 5px;
+            color: #555;
+            font-weight: bold;
+        }
 
-    /* スタートメニュー */
-    #start-menu {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(255, 255, 255, 0.95);
-      padding: 20px;
-      border-radius: 15px;
-      text-align: center;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-      width: 320px;
-      display: none;
-    }
-    #start-menu h2 { margin-top: 0; color: #333; font-size: 1.2rem; }
-    
-    .input-group { margin-bottom: 15px; text-align: left; }
-    .input-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.9rem;}
-    .input-group input, .input-group select {
-      width: 100%;
-      padding: 8px;
-      font-size: 16px;
-      box-sizing: border-box;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
+        /* スタートメニュー */
+        #start-menu {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            width: 320px;
+            display: none;
+        }
 
-    #connect-info {
-      margin-top: 10px;
-      font-size: 0.9em;
-      color: #666;
-    }
-    #myid { font-weight: bold; color: red; }
-  </style>
+        #start-menu h2 {
+            margin-top: 0;
+            color: #333;
+            font-size: 1.2rem;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        #connect-info {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        #myid {
+            font-weight: bold;
+            color: red;
+        }
+    </style>
 </head>
 
 <body>
-  <h1>🐈 AI早押しクイズ大会 🐈</h1>
+    <h1>🐈 AI早押しクイズ大会 🐈</h1>
 
-  <div id="game-container">
-    <div id="start-menu">
-      <h2>クイズ設定</h2>
-      <div class="input-group">
-        <label for="theme-input">クイズのテーマ</label>
-        <input type="text" id="theme-input" value="ITパスポート" placeholder="例: 日本史, ポケモン">
-      </div>
-      <div class="input-group">
-        <label for="count-input">問題数</label>
-        <select id="count-input">
-          <option value="3">3問</option>
-          <option value="5">5問</option>
-          <option value="10">10問</option>
-        </select>
-      </div>
-      <p style="color: #d32f2f; font-weight: bold; font-size: 20px;">
-        スマホを振ってスタート！
-      </p>
-      <div id="connect-info">
-        スマホでコントローラーを開いてください<br>
-        ID: <span id="myid">---</span>
-      </div>
+    <div id="game-container">
+        <div id="start-menu">
+            <h2>クイズ設定</h2>
+            <div class="input-group">
+                <label for="theme-input">クイズのテーマ</label>
+                <input type="text" id="theme-input" value="ねこ" placeholder="例: 日本史, ポケモン">
+            </div>
+            <div class="input-group">
+                <label for="count-input">問題数</label>
+                <select id="count-input">
+                    <option value="3">3問</option>
+                    <option value="5">5問</option>
+                    <option value="10">10問</option>
+                </select>
+            </div>
+            <p style="color: #d32f2f; font-weight: bold; font-size: 20px;">
+                スマホを振ってスタート！
+            </p>
+            <div id="connect-info">
+                スマホでコントローラーを開いてください<br>
+                ID: <span id="myid">---</span>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <div id="score-container">
-    <div style="color:#888;">参加者待機中...</div>
-  </div>
-  <div id="status-display"></div>
+    <div id="score-container">
+        <div style="color:#888;">参加者待機中...</div>
+    </div>
+    <div id="status-display"></div>
 
-  <script>
-    const socket = io();
+    <script>
+        const socket = io();
 
-    let myid = sessionStorage.getItem('clientId');
-    if (!myid) {
-      myid = Math.random().toString(36).substring(2, 6).toUpperCase();
-      sessionStorage.setItem('clientId', myid);
-    }
-    document.getElementById("myid").innerText = myid;
-
-    socket.emit("join", "game");
-
-    // ===== 複数人管理用の変数 =====
-    const MAX_PLAYERS = 5;
-    const PLAYER_COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#9B59B6'];
-    let players = {};
-    let playerOrder = [];
-
-    // --- Socketイベント ---
-    socket.on("sensor", data => {
-      const pid = data.id;
-      if (!pid) return;
-
-      if (!players[pid]) {
-        addPlayer(pid);
-      }
-      if (players[pid]) {
-        players[pid].gamma = parseFloat(data.g);
-      }
-    });
-
-    socket.on("smash", data => {
-      const pid = data.id;
-      if (players[pid]) {
-        handleSmash(pid);
-      }
-    });
-
-    socket.on("player_left", data => {
-      console.log("Player left:", data.id);
-    });
-
-    function addPlayer(id) {
-      if (playerOrder.length >= MAX_PLAYERS) return;
-      if (playerOrder.includes(id)) return;
-
-      const pIndex = playerOrder.length;
-      playerOrder.push(id);
-
-      players[id] = {
-        id: id,
-        index: pIndex,
-        name: `P${pIndex + 1}`,
-        color: PLAYER_COLORS[pIndex],
-        score: 0,
-        gamma: 0,
-        cursorX: CANVAS_WIDTH / 2,
-        isSmashing: false,
-        smashTimer: null
-      };
-
-      updateScoreBoard();
-    }
-
-    function updateScoreBoard() {
-      const container = document.getElementById('score-container');
-      container.innerHTML = '';
-
-      if (playerOrder.length === 0) {
-        container.innerHTML = '<div style="color:#888;">参加者待機中...</div>';
-        return;
-      }
-
-      playerOrder.forEach(id => {
-        const p = players[id];
-        const div = document.createElement('div');
-        div.className = 'player-score';
-        div.style.borderColor = p.color;
-        div.style.color = p.color;
-        div.innerHTML = `${p.name}: <span style="color:#333">${p.score}</span>`;
-        container.appendChild(div);
-      });
-    }
-
-    // ===== ゲーム定数・変数 =====
-    const CANVAS_WIDTH = 800;
-    const CANVAS_HEIGHT = 600;
-    const NUM_OPTIONS = 4;
-    
-    let targetPositions = [];
-    const TARGET_Y = 450;
-    const TARGET_SIZE = 80;
-    const CURSOR_SIZE = 100;
-
-    let img_cathand_1, img_cathand_2;
-    
-    const STATE = {
-      START: 'START',
-      LOADING: 'LOADING',
-      QUESTION: 'QUESTION',
-      RESULT: 'RESULT',
-      GAMEOVER: 'GAMEOVER'
-    };
-    let gameState = STATE.START;
-
-    let quizList = [];
-    let currentQuestionIndex = 0;
-    let resultMessage = "";
-    let resultColor = "";
-    
-    const ICON_COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A'];
-
-    // 画像アセット管理用配列
-    let handImages = []; // ここに5人分の画像セットが入ります
-
-    // 読み込む画像ファイル名の設定
-    // ※実際のファイル名に合わせて書き換えてください
-    const HAND_FILES = [
-      { up: 'images/cathand_1.png', down: 'images/cathand_2.png' }, // 1人目
-      { up: 'images/cathand1_1.png', down: 'images/cathand1_2.png' }, // 2人目
-      { up: 'images/cathand2_1.png', down: 'images/cathand2_2.png' }, // 3人目
-      { up: 'images/cathand3_1.png', down: 'images/cathand3_2.png' }, // 4人目
-      { up: 'images/cathand4_1.png', down: 'images/cathand4_2.png' }  // 5人目
-    ];
-
-    function preload() {
-
-      // 5人分の画像をループで読み込み
-      for (let i = 0; i < HAND_FILES.length; i++) {
-        handImages.push({
-          up: loadImage(HAND_FILES[i].up),
-          down: loadImage(HAND_FILES[i].down)
-        });
-      }
-      
-      // ※もし画像が足りない場合のエラー回避用に、デフォルト画像も読み込んでおくと安全です
-      // img_cathand_1 = loadImage('cathand_1.PNG');
-    }
-
-    function setup() {
-      let cnv = createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
-      cnv.parent('game-container'); 
-
-      textSize(20);
-      textAlign(CENTER, CENTER);
-      imageMode(CENTER);
-
-      const spacing = width / (NUM_OPTIONS + 1);
-      for (let i = 0; i < NUM_OPTIONS; i++) {
-        targetPositions.push(spacing * (i + 1));
-      }
-
-      document.getElementById('start-menu').style.display = 'block';
-    }
-
-    async function fetchQuiz() {
-      const themeVal = document.getElementById('theme-input').value || "ITパスポート";
-      const countVal = document.getElementById('count-input').value;
-
-      document.getElementById('start-menu').style.display = 'none';
-      gameState = STATE.LOADING;
-      
-      try {
-        const response = await fetch('/api/', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ theme: themeVal, count: countVal })
-        });
-
-        const json = await response.json();
-
-        if (json.error) {
-           alert("サーバーエラー:\n" + json.error);
-           resetToTitle();
-           return;
+        let myid = sessionStorage.getItem('clientId');
+        if (!myid) {
+            myid = Math.random().toString(36).substring(2, 6).toUpperCase();
+            sessionStorage.setItem('clientId', myid);
         }
+        document.getElementById("myid").innerText = myid;
 
-        if (json.data && Array.isArray(json.data)) {
-           quizList = json.data;
-           currentQuestionIndex = 0;
-           
-           playerOrder.forEach(id => players[id].score = 0);
-           updateScoreBoard();
-           
-           gameState = STATE.QUESTION;
-           document.getElementById('status-display').innerText = "";
-        } else {
-           alert("AIデータ形式エラー");
-           resetToTitle();
-        }
+        socket.emit("join", "game");
 
-      } catch (e) {
-        console.error(e);
-        alert("通信エラー: " + e.message);
-        resetToTitle();
-      }
-    }
+        // ===== 複数人管理用の変数 =====
+        const MAX_PLAYERS = 5;
+        const PLAYER_COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#9B59B6'];
+        let players = {};
+        let playerOrder = [];
 
-    function resetToTitle() {
-      gameState = STATE.START;
-      document.getElementById('start-menu').style.display = 'block';
-      document.getElementById('status-display').innerText = "";
-    }
+        // --- Socketイベント ---
+        socket.on("sensor", data => {
+            const pid = data.id;
+            if (!pid) return;
 
-    function handleSmash(pid) {
-      const p = players[pid];
-      if (!p) return;
-
-      p.isSmashing = true;
-      if (p.smashTimer) clearTimeout(p.smashTimer);
-      p.smashTimer = setTimeout(() => p.isSmashing = false, 150);
-
-      if (gameState === STATE.START) {
-        fetchQuiz();
-        return;
-      }
-
-      if (gameState === STATE.GAMEOVER) {
-        resetToTitle();
-        return;
-      }
-
-      if (gameState !== STATE.QUESTION) return;
-
-      let hitIndex = -1;
-      for (let i = 0; i < NUM_OPTIONS; i++) {
-        let d = dist(p.cursorX, TARGET_Y, targetPositions[i], TARGET_Y);
-        if (d < TARGET_SIZE) {
-          hitIndex = i;
-          break;
-        }
-      }
-
-      if (hitIndex !== -1) {
-        checkAnswer(pid, hitIndex);
-      }
-    }
-
-    function checkAnswer(pid, userIndex) {
-      const q = quizList[currentQuestionIndex];
-      const p = players[pid];
-      
-      if (userIndex === q.answerIndex) {
-        p.score += 10;
-        updateScoreBoard();
-        resultMessage = `${p.name} 正解！⭕️`;
-        resultColor = "#00ff00";
-      } else {
-        resultMessage = `${p.name} 不正解...❌`;
-        resultColor = "#ff0000";
-      }
-
-      gameState = STATE.RESULT;
-      
-      setTimeout(() => {
-        currentQuestionIndex++;
-        if (currentQuestionIndex >= quizList.length) {
-          gameState = STATE.GAMEOVER;
-        } else {
-          gameState = STATE.QUESTION;
-        }
-      }, 2000);
-    }
-
-    function draw() {
-      clear();
-
-      playerOrder.forEach(id => {
-        const p = players[id];
-        p.cursorX = map(p.gamma, -30, 30, 0, width, true);
-        p.cursorX = constrain(p.cursorX, 0, width);
-      });
-
-      if (gameState === STATE.START) {
-        fill(255, 255, 255, 100);
-        rect(0, 0, width, height);
-      } 
-      else if (gameState === STATE.GAMEOVER) {
-        fill(0, 0, 0, 150);
-        rect(0, 0, width, height);
-        
-        // ▼▼▼ 同点優勝対応ロジック ▼▼▼
-        
-        // 1. 最高得点を探す
-        let maxScore = -1;
-        playerOrder.forEach(id => {
-            if (players[id].score > maxScore) {
-                maxScore = players[id].score;
+            if (!players[pid]) {
+                addPlayer(pid);
+            }
+            if (players[pid]) {
+                players[pid].gamma = parseFloat(data.g);
             }
         });
 
-        // 2. 最高得点の人を全員リストアップ
-        let winners = [];
-        playerOrder.forEach(id => {
-            if (players[id].score === maxScore) {
-                winners.push(players[id].name);
+        socket.on("smash", data => {
+            const pid = data.id;
+            if (players[pid]) {
+                handleSmash(pid);
             }
         });
 
-        // 3. 表示
-        fill(255);
-        textSize(50);
-        if (winners.length > 0) {
-            // "優勝: P1, P2 (30点)"
-            text(`優勝: ${winners.join(", ")} (${maxScore}点)`, width/2, height/2 - 50);
-        } else {
-            text("ゲーム終了", width/2, height/2 - 50);
+        socket.on("player_left", data => {
+            console.log("Player left:", data.id);
+        });
+
+        function addPlayer(id) {
+            if (playerOrder.length >= MAX_PLAYERS) return;
+            if (playerOrder.includes(id)) return;
+
+            const pIndex = playerOrder.length;
+            playerOrder.push(id);
+
+            players[id] = {
+                id: id,
+                index: pIndex,
+                name: `P${pIndex + 1}`,
+                color: PLAYER_COLORS[pIndex],
+                score: 0,
+                gamma: 0,
+                cursorX: CANVAS_WIDTH / 2,
+                isSmashing: false,
+                smashTimer: null
+            };
+
+            updateScoreBoard();
         }
-        // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
-        textSize(30);
-        text("スマホを振ってタイトルへ", width/2, height/2 + 50);
-      }
-      else if (gameState === STATE.LOADING) {
-        fill(0);
-        textSize(30);
-        text("AIが問題を生成中...🐟", width/2, height/2);
-      }
-      else if (gameState === STATE.QUESTION || gameState === STATE.RESULT) {
-        drawQuizScreen();
-      }
+        function updateScoreBoard() {
+            const container = document.getElementById('score-container');
+            container.innerHTML = '';
 
-// --- 全員のネコの手を描画 ---
-      playerOrder.forEach(id => {
-        const p = players[id];
-        const hammerY = TARGET_Y + 65;
-        
-        /*// 識別用の円と名前を描画
-        fill(p.color);
-        noStroke();
-        ellipse(p.cursorX, hammerY - 20, 30, 30);
-        fill(255);
-        textSize(14);
-        textAlign(CENTER, CENTER);
-        text(p.name, p.cursorX, hammerY - 20);*/
+            if (playerOrder.length === 0) {
+                container.innerHTML = '<div style="color:#888;">参加者待機中...</div>';
+                return;
+            }
 
-        // ★ここを変更: プレイヤー番号に対応した画像を使う
-        // 画像配列の範囲外にならないよう % で安全策をとる
-        const imgSet = handImages[p.index % handImages.length];
-
-        if (p.isSmashing) {
-          // 叩いている画像
-          image(imgSet.down, p.cursorX, hammerY + 20, CURSOR_SIZE, CURSOR_SIZE);
-        } else {
-          // 通常の画像
-          image(imgSet.up, p.cursorX, hammerY, CURSOR_SIZE, CURSOR_SIZE);
+            playerOrder.forEach(id => {
+                const p = players[id];
+                const div = document.createElement('div');
+                div.className = 'player-score';
+                div.style.borderColor = p.color;
+                div.style.color = p.color;
+                div.innerHTML = `${p.name}: <span style="color:#333">${p.score}</span>`;
+                container.appendChild(div);
+            });
         }
-      });
-    }
 
-    function drawQuizScreen() {
-      const q = quizList[currentQuestionIndex];
+        // ===== ゲーム定数・変数 =====
+        const CANVAS_WIDTH = 800;
+        const CANVAS_HEIGHT = 600;
+        const NUM_OPTIONS = 4;
 
-      fill(50);
-      noStroke();
-      textSize(24);
-      textAlign(LEFT, TOP);
-      textWrap(CHAR);
-      text(`Q${currentQuestionIndex + 1}. ${q.question}`, 60, 50, width - 120, 220);
+        let targetPositions = [];
+        const TARGET_Y = 450;
+        const TARGET_SIZE = 80;
+        const CURSOR_SIZE = 100;
 
-      textSize(20);
-      const startY = 150;
-      const lineHeight = 45;
+        let img_cathand_1, img_cathand_2;
 
-      for (let i = 0; i < NUM_OPTIONS; i++) {
-        const y = startY + (i * lineHeight);
-        fill(ICON_COLORS[i]); textStyle(BOLD);
-        text(String.fromCharCode(65 + i) + ".", 50, y);
-        fill(0); textStyle(NORMAL);
-        text(q.options[i], 90, y, width - 140);
-      }
+        const STATE = {
+            START: 'START',
+            LOADING: 'LOADING',
+            QUESTION: 'QUESTION',
+            RESULT: 'RESULT',
+            GAMEOVER: 'GAMEOVER'
+        };
+        let gameState = STATE.START;
 
-      textAlign(CENTER, CENTER);
-      for (let i = 0; i < NUM_OPTIONS; i++) {
-        const x = targetPositions[i];
-        fill(ICON_COLORS[i]); stroke(255); strokeWeight(3);
-        ellipse(x, TARGET_Y, TARGET_SIZE, TARGET_SIZE);
-        fill(255); noStroke(); textSize(40); textStyle(BOLD);
-        text(String.fromCharCode(65 + i), x, TARGET_Y + 2);
-      }
-      textStyle(NORMAL); 
+        let quizList = [];
+        let currentQuestionIndex = 0;
+        let resultMessage = "";
+        let resultColor = "";
+        let confetti = [];
+    let resultPlayerId = null;
 
-      if (gameState === STATE.RESULT) {
-        fill(0, 0, 0, 150);
-        rectMode(CORNER);
-        rect(0, 0, width, height);
-        
-        fill(resultColor);
-        textSize(80);
-        textAlign(CENTER, CENTER);
-        text(resultMessage, width/2, height/2);
-        
-        fill(255);
-        textSize(30);
-        text(`正解は: ${String.fromCharCode(65 + q.answerIndex)}`, width/2, height/2 + 80);
-      }
-    }
-  </script>
+        const ICON_COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A'];
+
+        // 画像アセット管理用配列
+        let handImages = []; // ここに5人分の画像セットが入ります
+
+        // 読み込む画像ファイル名の設定
+        // ※実際のファイル名に合わせて書き換えてください
+        const HAND_FILES = [
+            { up: 'images/cathand_1.png', down: 'images/cathand_2.png' }, // 1人目
+            { up: 'images/cathand1_1.png', down: 'images/cathand1_2.png' }, // 2人目
+            { up: 'images/cathand2_1.png', down: 'images/cathand2_2.png' }, // 3人目
+            { up: 'images/cathand3_1.png', down: 'images/cathand3_2.png' }, // 4人目
+            { up: 'images/cathand4_1.png', down: 'images/cathand4_2.png' }  // 5人目
+        ];
+
+        function preload() {
+
+            // 5人分の画像をループで読み込み
+            for (let i = 0; i < HAND_FILES.length; i++) {
+                handImages.push({
+                    up: loadImage(HAND_FILES[i].up),
+                    down: loadImage(HAND_FILES[i].down)
+                });
+            }
+
+            // ※もし画像が足りない場合のエラー回避用に、デフォルト画像も読み込んでおくと安全です
+            // img_cathand_1 = loadImage('cathand_1.PNG');
+        }
+
+        function setup() {
+            let cnv = createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+            cnv.parent('game-container');
+
+            textSize(20);
+            textAlign(CENTER, CENTER);
+            imageMode(CENTER);
+
+            const spacing = width / (NUM_OPTIONS + 1);
+            for (let i = 0; i < NUM_OPTIONS; i++) {
+                targetPositions.push(spacing * (i + 1));
+            }
+
+            document.getElementById('start-menu').style.display = 'block';
+        }
+
+        async function fetchQuiz() {
+            const themeVal = document.getElementById('theme-input').value || "ITパスポート";
+            const countVal = document.getElementById('count-input').value;
+
+            document.getElementById('start-menu').style.display = 'none';
+            gameState = STATE.LOADING;
+
+            try {
+                const response = await fetch('/api/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ theme: themeVal, count: countVal })
+                });
+
+                const json = await response.json();
+
+                if (json.error) {
+                    alert("サーバーエラー:\n" + json.error);
+                    resetToTitle();
+                    return;
+                }
+
+                if (json.data && Array.isArray(json.data)) {
+                    quizList = json.data;
+                    currentQuestionIndex = 0;
+
+                    playerOrder.forEach(id => players[id].score = 0);
+                    updateScoreBoard();
+
+                    gameState = STATE.QUESTION;
+                    document.getElementById('status-display').innerText = "";
+                } else {
+                    alert("AIデータ形式エラー");
+                    resetToTitle();
+                }
+
+            } catch (e) {
+                console.error(e);
+                alert("通信エラー: " + e.message);
+                resetToTitle();
+            }
+        }
+
+        function resetToTitle() {
+            gameState = STATE.START;
+            confetti = [];
+            playerOrder.forEach(id => players[id].score = 0);
+            updateScoreBoard();
+            document.getElementById('start-menu').style.display = 'block';
+            document.getElementById('status-display').innerText = "";
+        }
+
+        function handleSmash(pid) {
+            const p = players[pid];
+            if (!p) return;
+
+            p.isSmashing = true;
+            if (p.smashTimer) clearTimeout(p.smashTimer);
+            p.smashTimer = setTimeout(() => p.isSmashing = false, 150);
+
+            if (gameState === STATE.START) {
+                fetchQuiz();
+                return;
+            }
+
+            if (gameState === STATE.GAMEOVER) {
+                resetToTitle();
+                return;
+            }
+
+            if (gameState !== STATE.QUESTION) return;
+
+            let hitIndex = -1;
+            for (let i = 0; i < NUM_OPTIONS; i++) {
+                let d = dist(p.cursorX, TARGET_Y, targetPositions[i], TARGET_Y);
+                if (d < TARGET_SIZE) {
+                    hitIndex = i;
+                    break;
+                }
+            }
+
+            if (hitIndex !== -1) {
+                checkAnswer(pid, hitIndex);
+            }
+        }
+
+        function checkAnswer(pid, userIndex) {
+            const q = quizList[currentQuestionIndex];
+            const p = players[pid];
+
+            resultPlayerId = pid;
+
+            if (userIndex === q.answerIndex) {
+                p.score += 10;
+                updateScoreBoard();
+                resultMessage = `${p.name} 正解！⭕️`;
+                resultColor = "#00ff00";
+            } else {
+                resultMessage = `${p.name} 不正解...❌`;
+                resultColor = "#ff0000";
+            }
+
+            gameState = STATE.RESULT;
+
+            setTimeout(() => {
+                currentQuestionIndex++;
+                if (currentQuestionIndex >= quizList.length) {
+                    gameState = STATE.GAMEOVER;
+                } else {
+                    gameState = STATE.QUESTION;
+                }
+            }, 2000);
+        }
+
+        function draw() {
+            clear();
+
+            // 描画設定のリセット
+            rectMode(CORNER);   // 四角形の基準を「左上」に戻す
+            imageMode(CENTER);  // 画像の基準は「中心」のまま
+            textAlign(CENTER, CENTER); // テキストの基準もリセット
+            strokeWeight(1);    // 線の太さを戻す
+
+            // 各プレイヤーのカーソル位置計算
+            playerOrder.forEach(id => {
+                const p = players[id];
+                p.cursorX = map(p.gamma, -30, 30, 0, width, true);
+                p.cursorX = constrain(p.cursorX, 0, width);
+            });
+
+            // --- 画面状態ごとの描画 ---
+            if (gameState === STATE.START) {
+                noStroke();
+                fill(255, 255, 255, 100);
+                rect(0, 0, width, height);
+            }
+            else if (gameState === STATE.LOADING) {
+                fill(0);
+                textSize(30);
+                text("AIが問題を生成中...🐟", width / 2, height / 2);
+            }
+            else if (gameState === STATE.QUESTION || gameState === STATE.RESULT) {
+                drawQuizScreen();
+            }
+            else if (gameState === STATE.GAMEOVER) {
+                // 背景を少し暗くする
+                fill(0, 0, 0, 200);
+                rect(0, 0, width, height);
+
+                // --- 紙吹雪エフェクト ---
+                if (confetti.length === 0) {
+                    for (let i = 0; i < 200; i++) {
+                        confetti.push({
+                            x: random(width),
+                            y: random(-height, height),
+                            w: random(8, 15),
+                            h: random(8, 15),
+                            color: color(random(255), random(255), random(255)),
+                            speed: random(2, 5),
+                            angle: random(TWO_PI),
+                            spin: random(-0.1, 0.1)
+                        });
+                    }
+                }
+
+                // 紙吹雪を描画・更新
+                noStroke();
+                for (let p of confetti) {
+                    fill(p.color);
+                    push();
+                    translate(p.x, p.y);
+                    rotate(p.angle);
+                    rect(0, 0, p.w, p.h);
+                    pop();
+
+                    p.y += p.speed;
+                    p.angle += p.spin;
+
+                    if (p.y > height) p.y = -20;
+                }
+
+                // --- 優勝者判定 ---
+                let maxScore = -1;
+                playerOrder.forEach(id => {
+                    if (players[id].score > maxScore) {
+                        maxScore = players[id].score;
+                    }
+                });
+
+                let winners = [];
+                playerOrder.forEach(id => {
+                    if (players[id].score === maxScore) {
+                        winners.push(players[id]); 
+                    }
+                });
+
+                // --- 画面表示 ---
+                textAlign(CENTER, CENTER);
+
+                // "WINNER" タイトル
+                noStroke();
+                fill(255, 255, 100);
+                textSize(40);
+                text("✨ CONGRATULATIONS! ✨", width / 2, height / 2 - 120);
+
+                // 優勝者の名前
+                stroke(0);
+                strokeWeight(8);
+                fill(255, 215, 0);
+                textSize(80);
+                textStyle(BOLD);
+
+                // ▼▼▼ 優勝者名の描画 (色分け対応) ▼▼▼
+                if (winners.length > 0) {
+                    textSize(80);
+                    textStyle(BOLD);
+                    noStroke();
+
+                    // 1. 全体の横幅を計算する
+                    const trophyLeft = "🏆 ";
+                    const trophyRight = " 🏆";
+                    const sep = ", ";
+                    
+                    let totalW = textWidth(trophyLeft) + textWidth(trophyRight);
+                    winners.forEach((p, i) => {
+                        totalW += textWidth(p.name);
+                        if (i < winners.length - 1) totalW += textWidth(sep);
+                    });
+
+                    // 2. 左端から順番に描画していく
+                    let currentX = (width / 2) - (totalW / 2);
+                    const drawY = height / 2;
+                    textAlign(LEFT, CENTER); // 左揃えで描画位置を制御
+
+                    // 左トロフィー
+                    fill(255, 215, 0); // ゴールド
+                    text(trophyLeft, currentX, drawY);
+                    currentX += textWidth(trophyLeft);
+
+                    // プレイヤー名ループ
+                    winners.forEach((p, i) => {
+                        // ★プレイヤーごとの色を適用
+                        fill(p.color); 
+                        text(p.name, currentX, drawY);
+                        currentX += textWidth(p.name);
+
+                        // 区切り文字 (カンマ)
+                        if (i < winners.length - 1) {
+                            fill(255, 215, 0); // ゴールド
+                            text(sep, currentX, drawY);
+                            currentX += textWidth(sep);
+                        }
+                    });
+
+                    // 右トロフィー
+                    fill(255, 215, 0); // ゴールド
+                    text(trophyRight, currentX, drawY);
+
+                    // スコア表示 (中央揃えに戻す)
+                    textAlign(CENTER, CENTER);
+                    noStroke();
+                    fill(255);
+                    textSize(40);
+                    textStyle(NORMAL);
+                    text(`Score: ${maxScore}`, width / 2, height / 2 + 80);
+
+                } else {
+                    fill(200);
+                    text("Game Set", width / 2, height / 2);
+                }
+
+                fill(200);
+                textSize(25);
+                noStroke();
+                text("スマホを振ってタイトルへ", width / 2, height - 50);
+            }
+
+            // --- 全員のネコの手を描画 (常に最前面) ---
+            playerOrder.forEach(id => {
+                const p = players[id];
+                const hammerY = TARGET_Y + 65;
+                const imgSet = handImages[p.index % handImages.length];
+
+                if (p.isSmashing) {
+                    image(imgSet.down, p.cursorX, hammerY + 20, CURSOR_SIZE, CURSOR_SIZE);
+                } else {
+                    image(imgSet.up, p.cursorX, hammerY, CURSOR_SIZE, CURSOR_SIZE);
+                }
+            });
+        }
+
+        function drawQuizScreen() {
+            rectMode(CORNER);
+            const q = quizList[currentQuestionIndex];
+
+            // --- 問題文 ---
+            fill(50);
+            noStroke();
+            textSize(24);
+            textAlign(LEFT, TOP);
+            textWrap(CHAR);
+            text(`Q${currentQuestionIndex + 1}. ${q.question}`, 60, 50, width - 120, 220);
+
+            // --- 選択肢 ---
+            textSize(20);
+            const startY = 150;
+            const lineHeight = 45;
+
+            for (let i = 0; i < NUM_OPTIONS; i++) {
+                const y = startY + (i * lineHeight);
+                fill(ICON_COLORS[i]); textStyle(BOLD);
+                textAlign(LEFT, TOP);
+                text(String.fromCharCode(65 + i) + ".", 50, y);
+                fill(0); textStyle(NORMAL);
+                text(q.options[i], 90, y, width - 140);
+            }
+
+            // --- ターゲット ---
+            textAlign(CENTER, CENTER);
+            for (let i = 0; i < NUM_OPTIONS; i++) {
+                const x = targetPositions[i];
+                fill(ICON_COLORS[i]); stroke(255); strokeWeight(3);
+                ellipse(x, TARGET_Y, TARGET_SIZE, TARGET_SIZE);
+                fill(255); noStroke(); textSize(40); textStyle(BOLD);
+                text(String.fromCharCode(65 + i), x, TARGET_Y + 2);
+            }
+            textStyle(NORMAL);
+            
+            // ▼▼▼ 結果画面の表示変更 ▼▼▼
+            if (gameState === STATE.RESULT) {
+                // 1. 背景を暗く
+                fill(0, 0, 0, 150);
+                rectMode(CORNER);
+                rect(0, 0, width, height);
+
+                // 2. 白いパネル
+                rectMode(CENTER);
+                fill(255);
+                stroke(200);
+                strokeWeight(4);
+                rect(width / 2, height / 2, 500, 320, 20);
+
+                const isCorrect = (resultColor === "#00ff00");
+                
+                // 答えたプレイヤーの情報を取得
+                const p = players[resultPlayerId];
+                const pName = p ? p.name : "???";
+                const pColor = p ? p.color : "#000";
+
+                if (isCorrect) {
+                    // --- 正解演出 (緑の二重丸) ---
+                    noFill();
+                    stroke("#2ecc71");
+                    strokeWeight(15);
+                    ellipse(width / 2, height / 2 - 60, 120, 120);
+
+                    strokeWeight(5);
+                    ellipse(width / 2, height / 2 - 60, 150, 150);
+
+                    // --- テキスト表示 ---
+                    // 「P1」と「正解！！」を連結して中央揃えにするための計算
+                    textSize(50);
+                    textStyle(BOLD);
+                    const msg = " 正解！！";
+                    const wName = textWidth(pName);
+                    const wMsg = textWidth(msg);
+                    const totalW = wName + wMsg;
+                    const startX = (width / 2) - (totalW / 2);
+
+                    noStroke();
+                    textAlign(LEFT, CENTER); // 左揃えモードで順番に描画
+
+                    // 1. プレイヤー名 (プレイヤーの色)
+                    fill(pColor);
+                    text(pName, startX, height / 2 + 60);
+
+                    // 2. メッセージ (緑色)
+                    fill("#27ae60");
+                    text(msg, startX + wName, height / 2 + 60);
+
+                } else {
+                    // --- 不正解演出 (赤バツ) ---
+                    stroke("#e74c3c");
+                    strokeWeight(15);
+                    const cx = width / 2;
+                    const cy = height / 2 - 60;
+                    const size = 50;
+                    line(cx - size, cy - size, cx + size, cy + size);
+                    line(cx + size, cy - size, cx - size, cy + size);
+
+                    // --- テキスト表示 ---
+                    textSize(50);
+                    textStyle(BOLD);
+                    const msg = " 残念...";
+                    const wName = textWidth(pName);
+                    const wMsg = textWidth(msg);
+                    const totalW = wName + wMsg;
+                    const startX = (width / 2) - (totalW / 2);
+
+                    noStroke();
+                    textAlign(LEFT, CENTER);
+
+                    // 1. プレイヤー名 (プレイヤーの色)
+                    fill(pColor);
+                    text(pName, startX, height / 2 + 60);
+
+                    // 2. メッセージ (赤色)
+                    fill("#c0392b");
+                    text(msg, startX + wName, height / 2 + 60);
+                }
+
+                // 3. 正解の選択肢
+                fill(240);
+                noStroke();
+                rect(width / 2, height / 2 + 120, 480, 50, 10);
+
+                fill(50);
+                textSize(24);
+                textStyle(NORMAL);
+                textAlign(CENTER, CENTER);
+                const correctChar = String.fromCharCode(65 + q.answerIndex);
+                text(`正解は...  【 ${correctChar} 】 ${q.options[q.answerIndex]}`, width / 2, height / 2 + 122);
+            }
+        }
+    </script>
 </body>
+
 </html>
